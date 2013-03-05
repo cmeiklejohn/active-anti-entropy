@@ -6,10 +6,48 @@
   <style>
     @import url(stack.css);
 
+    svg.tree {
+      fill: white;
+      font-size: 14px;
+      font-weight: bold;
+      stroke-width: 1px;
+    }
+
+    path.link {
+      fill: none;
+      stroke: gray;
+    }
+
+    span.hint {
+      text-align: center;
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    h1.no-margin {
+      margin: 0px;
+    }
+
+    svg {
+      margin-top: 30px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+
     .caption {
       font-size: 72px;
       text-align: center;
       text-shadow: 0px 2px 6px rgba(0,0,0,.5);
+    }
+
+    .footer {
+      margin-top: 20px;
+      display: block;
+      font-size: 20px;
+      text-align: center;
     }
   </style>
   <body class="overview">
@@ -36,8 +74,183 @@
     repair will never have the opportunity to repair.</p>
     </section>
 
+    <section>
+    <h1 class="caption no-margin">Normal Operation</h1>
+    <span id="normal-desc" class="hint"></span>
+    <div id="normal-ring"></div>
+    <span class="footer">Hover on the ring to begin animation.</span>
+    </section>
+
+    <section>
+    <h1 class="caption no-margin">Hinted Handoff</h1>
+    <span id="hinted-desc" class="hint"></span>
+    <div id="hinted-ring"></div>
+    <span class="footer">Hover on the ring to begin animation.</span>
+    </section>
+
+    <section>
+    <h1 class="caption no-margin">Read Repair</h1>
+    <span id="read-repair-desc" class="hint"></span>
+    <div id="read-repair-ring"></div>
+    <span class="footer">Hover on the ring to begin animation.</span>
+    </section>
+
+    <section>
+    <h1 class="caption">What happens if you never read all of the
+      keys?</h1>
+    </section>
+
+    <section>
+    <p class="caption">There needs to be a mechanism to repair a
+    replicas missing data from other replicas.</p>
+    </section>
+
+    <section>
+    <h1 class="caption no-margin">riak-admin repair</h1>
+    <span id="repair-desc" class="hint"></span>
+    <div id="repair-ring"></div>
+    <span class="footer">Hover on the ring to begin animation.</span>
+    </section>
+
+    <section>
+    <p class="caption">However, this repairs <b>all</b> data.</p>
+    </section>
+
+    <section>
+    <h1 class="caption">Introducting</h1>
+    <p class="caption">Active Anti-Entropy</p>
+    </section>
+
+    <section>
+    <h1 class="caption">Background process for keeping divergent and missing
+      data in sync.</h1>
+    </section>
+
+    <section>
+    <h1 class="caption">Enabled by default in Riak 1.3</h1>
+    </section>
+
+    <section>
+    <h1 class="caption">Highly efficient</h1>
+    <p class="caption">Utilizes Merkle trees for identification of divergent data.</p>
+    </section>
+
+    <section>
+    <h1 class="caption">Highly efficient</h1>
+    <p class="caption">Optimization for faster comparisions.</p>
+    </section>
+
+    <section>
+    <h1 class="caption no-margin">Merkle Trees</h1>
+    <span id="basic-desc" class="hint"></span>
+    <div id="basic-tree"></div>
+    <span class="footer">Click a right-most hash to identify.</span>
+    </section>
+
+    <section>
+    <h1 class="caption">Merkle Trees</h1>
+    <p class="caption">Stored on disk; updated as data is written to the cluster.</p>
+    </section>
+
     <script src="d3.v3.js"></script>
     <script src="stack.v0.js"></script>
+    <script src="ring.js"></script>
+    <script src="tree.js"></script>
+
+    <script>
+
+      // Defaults.
+      var n_nodes = 5;
+      var n_partitions = 8;
+
+      // Render normal ring.
+      var normalRing = generateRing("normal", n_nodes, n_partitions, "Each key has a preference list of n vnodes where primary replicas are stored.");
+
+      normalRing.svgElement.on("mouseover", function() {
+
+        // Show preference list.
+        normalRing.updateFunction(
+          "Write to Riak stores data in partitions 0, 1, and 2.",
+          n_nodes, n_partitions, [], [0, 1, 2]);
+      });
+
+      // Render handoff ring.
+      var hintedRing = generateRing("hinted", n_nodes, n_partitions, "In the event of an unreachable node, data is written to a fallback.");
+
+      hintedRing.svgElement.on("mouseover", function() {
+
+        // Show preference list.
+        hintedRing.updateFunction(
+          "Vnode 0, 1, 2 represent key's preference list.",
+          n_nodes, n_partitions, [], [0, 1, 2]);
+
+        // Show down node.
+        setTimeout(function() {
+          hintedRing.updateFunction(
+            "However, if vnode in that preference list is down...",
+            n_nodes, n_partitions, [1], [0, 1, 2]);
+
+          // Show fallbacks.
+          setTimeout(function() {
+            hintedRing.updateFunction(
+              "...data is written to a fallback, vnode 3.",
+              n_nodes, n_partitions, [1], [0, 1, 2, 3]);
+          }, 1300);
+        }, 1300);
+      });
+
+      // Render read repair ring.
+      var readRepairRing = generateRing("read-repair", n_nodes, n_partitions, "Read repair fixes missing or divergent data during read operations.");
+
+      readRepairRing.svgElement.on("mouseover", function() {
+
+        // Show preference list.
+        readRepairRing.updateFunction(
+          "Preference list is vnode 0, 1 and 2, however 2 is missing the data...",
+          n_nodes, n_partitions, [1], [0, 1, 2]);
+
+        // Show repair.
+        setTimeout(function() {
+          readRepairRing.updateFunction(
+            "Value will be read from vnode 0 and 2...",
+            n_nodes, n_partitions, [1], [0, 2]);
+
+            setTimeout(function() {
+              readRepairRing.updateFunction(
+                "...and repaired on vnode 1.",
+                n_nodes, n_partitions, [], [0, 1, 2]);
+            }, 1300);
+        }, 1300);
+      });
+
+      // Render repair ring.
+      var repairRing = generateRing("repair", n_nodes, n_partitions, "Manual rebuilding of all data from replicas.");
+
+      repairRing.svgElement.on("mouseover", function() {
+
+        // Show preference list.
+        repairRing.updateFunction(
+          "Preference list is vnode 0, 1 and 2, however 2 is missing the data...",
+          n_nodes, n_partitions, [1], [0, 1, 2]);
+
+        // Show repair.
+        setTimeout(function() {
+          repairRing.updateFunction(
+            "Data will be read from vnode 0 and 2...",
+            n_nodes, n_partitions, [1], [0, 2]);
+
+            setTimeout(function() {
+              repairRing.updateFunction(
+                "...and repaired on vnode 1.",
+                n_nodes, n_partitions, [], [0, 1, 2]);
+            }, 1300);
+        }, 1300);
+      });
+
+      // Render basic merkle tree.
+      var basicTree = generateTree("basic", "Quickly identify divergent keys.");
+
+    </script>
 
   </body>
 </html>
