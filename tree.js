@@ -32,7 +32,17 @@ function generateTree(id, initialDescription) {
     name: "f8f947",
     contents: [
       { name: "f98d30", contents: [
-        { name: "f5acd9", contents: [] },
+        { name: "f5acd9", contents: [
+          { name: "a23bf2", contents: [] },
+          { name: "a2f2bb", contents: [] },
+          { name: "abb232", contents: [] },
+          { name: "af2bbb", contents: [] },
+          { name: "a23bf2", contents: [] },
+          { name: "a2223b", contents: [] },
+          { name: "a3f2bb", contents: [] },
+          { name: "a2f2bb", contents: [] },
+          { name: "23abf2", contents: [] }
+        ] },
         { name: "5facd9", contents: [] },
         { name: "f5acd9", contents: [] },
         { name: "5facd9", contents: [] },
@@ -81,6 +91,7 @@ function generateTree(id, initialDescription) {
          .attr("dx", function(d)
            { var gap = 2 * nodeRadius; return d.children ? -gap : gap; })
          .attr("dy", 3)
+         .attr("class", function(d) { return d.depth === 3 ? "segment" : "hash"; })
          .text(function(d) { return d.name; })
          .on("click", function(d) {
             var self = d3.select(this.parentNode);
@@ -92,6 +103,10 @@ function generateTree(id, initialDescription) {
 
             d3.selectAll("g.node")
               .filter(function(d, i) { return d === self.datum().parent.parent; })
+              .style("fill", "red");
+
+            d3.selectAll("g.node")
+              .filter(function(d, i) { return d === self.datum().parent.parent.parent; })
               .style("fill", "red");
          });
 
